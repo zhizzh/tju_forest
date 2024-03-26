@@ -51,43 +51,8 @@ def extract_labels(record):
     return all_lead_data
 
 
-# 定义Transformer模型
-def transformer_encoder(inputs, head_size, num_heads, ff_dim, rate=0.1):
-    # Multi-head self-attention mechanism
-    x = MultiHeadAttention(
-        num_heads=num_heads, key_dim=head_size, dropout=rate
-    )(inputs, inputs)
-    attention_output = LayerNormalization(epsilon=1e-6)(x + inputs)
-    linear_layer = Dense(units=2)(attention_output)
-    x = x + linear_layer
-
-    # LayerNormalization
-    output = LayerNormalization(epsilon=1e-6)(x)
-
-    # Feed-forward neural network
-    # x = Conv1D(filters=ff_dim, kernel_size=1, activation="relu")(attention_output)
-    # output = LayerNormalization(epsilon=1e-6)(x + attention_output)
-    return output
 
 
-# 构建Transformer模型
-def build_model(input_shape, head_size, num_heads, ff_dim, num_transformer_blocks, mlp_units, dropout_rate):
-    inputs = Input(shape=input_shape)
-    x = inputs
-
-    # 堆叠多个Transformer encoder blocks
-    for _ in range(num_transformer_blocks):
-        x = transformer_encoder(x, head_size, num_heads, ff_dim)
-
-    # 全连接层
-    x = Flatten()(x)
-    for mlp_unit in mlp_units:
-        x = Dense(mlp_unit, activation="relu")(x)
-        x = Dropout(dropout_rate)(x)
-    outputs = Dense(12*1000, activation="sigmoid")(x)  # 假设标签数据的形状是(967, 12, 1000)
-    outputs = Reshape((12, 1000))(outputs)  # 将输出转换为（batch, 12, 1000）
-
-    return Model(inputs, outputs)
 
 def train_digitization_model(data_folder, model_folder, verbose):
     # Find data files.
@@ -106,7 +71,7 @@ def train_digitization_model(data_folder, model_folder, verbose):
         print('Extracting features and labels from the data...')
 
     features = list()
-    labels = list()
+    # labels = list()
 
     for i in range(num_records):
         if verbose:
@@ -117,12 +82,11 @@ def train_digitization_model(data_folder, model_folder, verbose):
 
         # Extract the features from the image...
         current_features = extract_features(record)
-        current_features = current_features.reshape((1, -1))  # (1,2)
         features.append(current_features)
-
-        # 获取标签值
-        current_labels = extract_labels(record)   # (12,1000)
-        labels.append(current_labels)
+        #
+        # # 获取标签值
+        # current_labels = extract_labels(record)   # (12,1000)
+        # labels.append(current_labels)
 
 
     # Train the model.
@@ -130,17 +94,7 @@ def train_digitization_model(data_folder, model_folder, verbose):
         print('Training the model on the data...')
 
     # This overly simple model uses the mean of these overly simple features as a seed for a random number generator.
-    # model = np.mean(features)
-
-    features = np.array(features)
-    labels = np.array(labels)
-
-    model = build_model(input_shape=(1, 2), head_size=256, num_heads=4, ff_dim=4, num_transformer_blocks=4,
-                        mlp_units=[128, 64], dropout_rate=0.1)
-
-    # 编译模型
-    model.compile(optimizer=optimizers.Adam(learning_rate=1e-4), loss="mse")
-    model.fit(features, labels, epochs=20, batch_size=32)
+    model = np.mean(features)
 
     # Create a folder for the model if it does not already exist.
     os.makedirs(model_folder, exist_ok=True)
@@ -320,15 +274,15 @@ def extract_features(record):
     return np.array([mean, std])
 
 # Save your trained digitization model.
-# def save_digitization_model(model_folder, model):
-#     d = {'model': model}
-#     filename = os.path.join(model_folder, 'digitization_model.sav')
-#     joblib.dump(d, filename, protocol=0)
 def save_digitization_model(model_folder, model):
-    d = {'model': model.to_json()}
-    filename = os.path.join(model_folder, 'digitization_model.pkl')
-    with open(filename, 'wb') as f:
-        pickle.dump(d, f)
+    d = {'model': model}
+    filename = os.path.join(model_folder, 'digitization_model.sav')
+    joblib.dump(d, filename, protocol=0)
+# def save_digitization_model(model_folder, model):
+#     d = {'model': model.to_json()}
+#     filename = os.path.join(model_folder, 'digitization_model.pkl')
+#     with open(filename, 'wb') as f:
+#         pickle.dump(d, f)
 
 # Save your trained dx classification model.
 # def save_dx_model(model_folder, model, classes):
