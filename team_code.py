@@ -192,7 +192,7 @@ def train_dx_model(data_folder, model_folder, verbose):
 #     filename = os.path.join(model_folder, 'digitization_model.sav')
 #     return joblib.load(filename)
 def load_digitization_model(model_folder, verbose):
-    filename = os.path.join(model_folder, 'digitization_model.pkl')
+    filename = os.path.join(model_folder, 'digitization_model.sav')
     with open(filename, 'rb') as f:
         loaded_model_data = pickle.load(f)
     return loaded_model_data
@@ -212,8 +212,8 @@ def load_dx_model(model_folder, verbose):
 # Run your trained digitization model. This function is *required*. You should edit this function to add your code, but do *not*
 # change the arguments of this function.
 def run_digitization_model(digitization_model, record, verbose):
-    # model = digitization_model['model']
-    model = model_from_json(digitization_model['model'])
+    model = digitization_model['model']
+    # model = model_from_json(digitization_model['model'])
     # Extract features.
     features = extract_features(record)
 
