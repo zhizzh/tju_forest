@@ -22,7 +22,6 @@ def find_records(folder):
     records = sorted(records)
     return records
 
-
 # Load the header for a record.
 def load_header(record):
     header_file = get_header_file(record)
